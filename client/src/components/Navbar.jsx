@@ -1,0 +1,192 @@
+import React, { Fragment, useState } from "react";
+import { Menu, Transition } from "@headlessui/react";
+import { BiChevronDown } from "react-icons/bi";
+import { CgProfile } from "react-icons/cg";
+import { HiMenuAlt3 } from "react-icons/hi";
+import { AiOutlineClose, AiOutlineLogout } from "react-icons/ai";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Logout } from "../redux/userSlice";
+import CustomButton from "./CustomButton";
+import { NoProfile } from "../assets";
+
+const MenuList = ({ user, onClick, onLogout }) => {
+  return (
+    <div>
+      <Menu as='div' className='inline-block text-left'>
+        <div className='flex'>
+          <Menu.Button className='inline-flex gap-2 w-full rounded-md bg-white md:px-4 py-2 text-sm font-medium text-slate-700 hover:bg-opacity-20'>
+            <div className='leading[80px] flex flex-col items-start'>
+              <p className='text-sm font-semibold'>
+                {user?.firstName ?? user?.name}
+              </p>
+              <span className='text-sm text-blue-600'>
+                {user?.jobTitle ?? user?.email}
+              </span>
+            </div>
+
+            <img
+              src={user?.profileUrl || NoProfile}
+              alt='user profile'
+              className='w-10 h-10 rounded-full object-cover'
+            />
+            <BiChevronDown className='h-8 w-8 text-slate-600' aria-hidden='true' />
+          </Menu.Button>
+        </div>
+
+        <Transition
+          as={Fragment}
+          enter='transition ease-out duration-100'
+          enterFrom='transform opacity-0 scale-95'
+          enterTo='transform opacity-100 scale-100'
+          leave='transition ease-in duration-75'
+          leaveFrom='transform opacity-100 scale-100'
+          leaveTo='transform opacity-0 scale-95'
+        >
+          <Menu.Items className='absolute z-50 right-2 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg focus:outline-none'>
+            <div className='p-1'>
+              <Menu.Item>
+                {({ active }) => (
+                  <Link
+                    to={`${user?.accountType === "seeker" ? "/user-profile" : "/company-profile"}`}
+                    className={`${
+                      active ? "bg-blue-500 text-white" : "text-gray-900"
+                    } group flex w-full items-center rounded-md p-2 text-sm`}
+                    onClick={onClick}
+                  >
+                    <CgProfile
+                      className={`${
+                        active ? "text-white" : "text-gray-600"
+                      } mr-2 h-5 w-5`}
+                      aria-hidden='true'
+                    />
+                    {user?.accountType === "seeker" ? "User Profile" : "Company Profile"}
+                  </Link>
+                )}
+              </Menu.Item>
+
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={onLogout}
+                    className={`${
+                      active ? "bg-blue-500 text-white" : "text-gray-900"
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  >
+                    <AiOutlineLogout
+                      className={`${
+                        active ? "text-white" : "text-gray-600"
+                      } mr-2 h-5 w-5`}
+                      aria-hidden='true'
+                    />
+                    Log Out
+                  </button>
+                )}
+              </Menu.Item>
+            </div>
+          </Menu.Items>
+        </Transition>
+      </Menu>
+    </div>
+  );
+};
+
+const Navbar = () => {
+  const { user } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleCloseNavbar = () => {
+    setIsOpen(false);
+  };
+
+  const handleLogout = () => {
+    dispatch(Logout());
+    localStorage.removeItem("userInfo");
+    window.location.replace("/");
+  };
+
+  return (
+    <div className='relative bg-[#f7fdfd] z-50'>
+      <nav className='container mx-auto flex items-center justify-between p-5'>
+        <div>
+          <Link to='/' className='text-blue-600 font-bold text-xl'>
+            Job<span className='text-[#1677cccb]'>Portal</span>
+          </Link>
+        </div>
+
+        <ul className='hidden lg:flex gap-10 text-base'>
+          {user?.accountType === "seeker" ? (
+            <>
+              <li><Link to='/find-jobs'>Find Jobs</Link></li>
+              <li><Link to='/applied-jobs'>Applied Jobs</Link></li>
+            </>
+          ) : user?.token ? (
+            <>
+              <li><Link to='/upload-job'>Post Job</Link></li>
+              <li><Link to='/company-profile'>Company Profile</Link></li>
+            </>
+          ) : null}
+          <li><Link to='/companies'>Companies</Link></li>
+          
+        </ul>
+
+        <div className='hidden lg:block'>
+          {!user?.token ? (
+            <Link to='/user-auth'>
+              <CustomButton
+                title='Sign In'
+                containerStyles='text-blue-600 py-1.5 px-5 focus:outline-none hover:bg-blue-700 hover:text-white rounded-full text-base border border-blue-600'
+              />
+            </Link>
+          ) : (
+            <MenuList user={user} onLogout={handleLogout} />
+          )}
+        </div>
+
+        <button
+          className='block lg:hidden text-slate-900'
+          onClick={() => setIsOpen((prev) => !prev)}
+        >
+          {isOpen ? <AiOutlineClose size={26} /> : <HiMenuAlt3 size={26} />}
+        </button>
+      </nav>
+
+      {/* Mobile Menu */}
+      <div
+        className={`${
+          isOpen ? "absolute flex bg-[#f7fdfd]" : "hidden"
+        } container mx-auto lg:hidden flex-col pl-8 gap-3 py-5`}
+      >
+        {user?.accountType === "seeker" ? (
+          <>
+            <Link to='/find-jobs' onClick={handleCloseNavbar}>Find Jobs</Link>
+            <Link to='/applied-jobs' onClick={handleCloseNavbar}>Applied Jobs</Link>
+          </>
+        ) : user?.token ? (
+          <>
+            <Link to='/upload-job' onClick={handleCloseNavbar}>Post Job</Link>
+            <Link to='/company-profile' onClick={handleCloseNavbar}>Company Profile</Link>
+          </>
+        ) : null}
+        <Link to='/companies' onClick={handleCloseNavbar}>Companies</Link>
+      
+
+        <div className='w-full py-10'>
+          {!user?.token ? (
+            <Link to='/user-auth'>
+              <CustomButton
+                title='Sign In'
+                containerStyles='text-blue-600 py-1.5 px-5 focus:outline-none hover:bg-blue-700 hover:text-white rounded-full text-base border border-blue-600'
+              />
+            </Link>
+          ) : (
+            <MenuList user={user} onClick={handleCloseNavbar} onLogout={handleLogout} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Navbar;
