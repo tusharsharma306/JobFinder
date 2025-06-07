@@ -14,7 +14,7 @@ import {
 const router = express.Router();
 
 // GET JOB POSTS
-router.get("/find-jobs", getJobPosts); // Fix: Changed from /find-jobs to /
+router.get("/find-jobs", getJobPosts); 
 
 // Other routes
 router.post("/upload-job", userAuth, createJob);

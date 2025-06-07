@@ -36,7 +36,6 @@ export const handleFileUpload = async (uploadFile) => {
     formData.append("file", uploadFile);
     formData.append("upload_preset", "jobfinder");
     
-    //  upload parameters for PDFs
     if (uploadFile.type === 'application/pdf') {
         formData.append("resource_type", "raw");
     } else {

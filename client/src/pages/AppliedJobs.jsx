@@ -18,7 +18,6 @@ const AppliedJobs = () => {
         });
 
         if (res.success) {
-          // Ensure all jobs have the required fields
           const formattedJobs = res.data.map(job => ({
             ...job,
             detail: job.detail || [{ desc: "No description available" }],

@@ -119,7 +119,7 @@ const JobDetail = () => {
 
       if (res.success) {
         setIsEditing(false);
-        getJobDetails(); // Refresh job details
+        getJobDetails(); 
       }
     } catch (error) {
       console.error(error);
@@ -141,7 +141,6 @@ const JobDetail = () => {
         />
       ) : (
         <div className='w-full flex flex-col md:flex-row gap-10'>
-          {/* LEFT SIDE */}
           {isFetching ? (
             <Loading />
           ) : (
@@ -233,7 +232,6 @@ const JobDetail = () => {
               {/* Application Button */}
               <div className='w-full'>
                 {job?.company?._id === user?._id ? (
-                  // Company's view
                   <div className="space-y-4">
                     <div className="flex gap-4">
                       <CustomButton

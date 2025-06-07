@@ -75,7 +75,7 @@ const ApplicantsList = ({ jobId }) => {
       });
 
       if (res.success) {
-        fetchApplicants(); // Refresh the list
+        fetchApplicants(); 
       }
     } catch (error) {
       console.error("Error updating status:", error);
@@ -164,7 +164,6 @@ const ApplicantCard = ({ applicant, onStatusUpdate }) => {
     rejected: 'bg-red-100 text-red-800'
   };
 
-  // Get the resume URL from either source
   const resumeUrl = applicant.resumeUrl || applicant.user?.cvUrl;
 
   return (

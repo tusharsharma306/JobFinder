@@ -214,20 +214,18 @@ const CompanyProfile = () => {
     setIsLoading(true);
     let id = null;
 
-    // Check if we have a valid ID from params or user
     if(params?.id) {
       id = params.id;
     } else if(user?._id) {
       id = user._id;
     }
 
-    // Only make API call if we have a valid ID
     if(id) {
       try {
         const res = await apiRequest({
           url: `/companies/get-company/${id}`,
           method: "GET",
-          token: user?.token // Add token for authentication
+          token: user?.token 
         });
 
         setInfo(res?.data);
