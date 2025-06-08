@@ -256,7 +256,7 @@ const CompanyProfile = () => {
             Welcome, {info?.name}
           </h2>
 
-          {user?.accountType === undefined &&
+          {user?.accountType === "company" &&
             info?._id === user?._id && (
               <div className='flex items-center justify-center py-5 md:py-0 gap-4'>
                 <CustomButton
