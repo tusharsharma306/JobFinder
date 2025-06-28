@@ -6,8 +6,6 @@ import { getUser, updateUser, getUserApplications } from "../controllers/userCon
 const router = express.Router();
 
 
-console.log("Setting up user routes");
-
 router.post("/get-user", userAuth, getUser);
 
 router.put("/update-user", 

@@ -41,6 +41,7 @@ const FindJobs = () => {
         skills: "",
         isActive: true,
         deadline: null,
+        includeArchived: false 
       });
       const res = await apiRequest({
         url,

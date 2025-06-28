@@ -1,6 +1,7 @@
 //companiesController.js
 import mongoose from "mongoose";
 import Companies from "../models/companiesModel.js";
+import Jobs from "../models/jobsModel.js";
 
 
 export const register = async (req, res, next) => {
@@ -302,39 +303,47 @@ export const getCompanies = async (req, res, next) => {
 
 export const getCompanyJobListing = async (req, res, next) => {
   try {
+    // console.log("--- DEBUG START: getCompanyJobListing ---");
+    // console.log("Full req.body:", req.body);
+    // console.log("Type of req.body.archived:", typeof req.body.archived);
+    // console.log("Value of req.body.archived:", req.body.archived);
     const id = req.body.user.userId;
-
+    const { archived } = req.body;
     if (!id) {
       return res.status(400).json({
         success: false,
         message: "User ID is required"
       });
     }
-
-    const company = await Companies.findById(id).populate({
-      path: "jobPosts",
-      options: {
-        sort: "-createdAt"
-      }
-    });
-
-    if (!company) {
-      return res.status(404).json({
-        success: false,
-        message: "Company not found"
-      });
+    const companyObjectId = mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id;
+   
+    let isArchivedBool = false;
+    if (typeof archived === 'boolean') {
+      isArchivedBool = archived;
+    } else if (typeof archived === 'string') {
+      isArchivedBool = archived === 'true';
+    } else if (typeof archived === 'object' && archived !== null && 'value' in archived) {
+      isArchivedBool = Boolean(archived.value);
+    } else {
+      isArchivedBool = Boolean(archived);
     }
+    // console.log(`[getCompanyJobListing] Querying jobs for company:`, companyObjectId, 'type:', typeof companyObjectId, 'archived:', isArchivedBool);
+    const jobs = await Jobs.find({
+      company: companyObjectId,
+      isArchived: isArchivedBool
+    }).sort({ createdAt: -1 });
 
+    
+    // console.log(`[getCompanyJobListing] company: ${companyObjectId}, archived: ${archived}, jobs found: ${jobs.length}`);
     res.status(200).json({
       success: true,
-      data: company.jobPosts || []
+      data: jobs
     });
-
   } catch (error) {
     console.error("Error fetching job listings:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching job listings" 
+    res.status(500).json({
+      success: false,
+      message: "Error fetching job listings"
     });
   }
 };

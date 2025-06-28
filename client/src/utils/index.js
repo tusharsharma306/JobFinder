@@ -1,6 +1,6 @@
 import axios from "axios";
-// const API_URL = "http://localhost:8800/api-v1";
-const API_URL = "https://jobfinder-itv1.onrender.com/api-v1";
+ const API_URL = "http://localhost:8800/api-v1";
+// const API_URL = "https://jobfinder-itv1.onrender.com/api-v1";
 
 
 export const API = axios.create({
@@ -110,4 +110,9 @@ export const updateURL = ({
   navigate(newURL, { replace: true });
   return newURL;
 };
+
+export function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]+>/g, '');
+}
 

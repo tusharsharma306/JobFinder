@@ -10,11 +10,12 @@ const AppliedJobs = () => {
 
   useEffect(() => {
     const fetchAppliedJobs = async () => {
+      setLoading(true);
       try {
         const res = await apiRequest({
           url: '/users/applied-jobs',
-          token: user?.token,
-          method: 'GET'
+          method: 'GET',
+          token: user?.token
         });
 
         if (res.success) {
@@ -23,10 +24,11 @@ const AppliedJobs = () => {
             detail: job.detail || [{ desc: "No description available" }],
             status: job.status || "pending"
           }));
+          
           setJobs(formattedJobs);
         }
       } catch (error) {
-        console.error(error);
+        console.error('[AppliedJobs] Error fetching applied jobs:', error);
       } finally {
         setLoading(false);
       }

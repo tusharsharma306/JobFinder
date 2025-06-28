@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { CustomButton, JobCard, JobTypes, TextInput, Loading } from "../components";
 import { apiRequest } from "../utils";
+import QuillEditor from '../components/QuillEditor';
 
 const UploadJob = () => {
   const { user } = useSelector((state) => state.user);
@@ -14,6 +15,7 @@ const UploadJob = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -55,7 +57,6 @@ const UploadJob = () => {
 
   const getRecentPost = async () => {
     try {
-      // First check if we have a valid user and user._id
       if (!user?._id) {
         console.log("No user ID found");
         return;
@@ -164,15 +165,19 @@ const UploadJob = () => {
               <label className='text-gray-600 text-sm mb-1'>
                 Job Description
               </label>
-              <textarea
-                className='rounded border border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-base px-4 py-2 resize-none'
-                rows={4}
-                cols={6}
-                {...register("desc", {
-                  required: "Job Description is required!",
-                })}
-                aria-invalid={errors.desc ? "true" : "false"}
-              ></textarea>
+              <Controller
+                name="desc"
+                control={control}
+                defaultValue=""
+                rules={{ required: "Job Description is required!" }}
+                render={({ field }) => (
+                  <QuillEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Enter job description..."
+                  />
+                )}
+              />
               {errors.desc && (
                 <span role='alert' className='text-xs text-red-500 mt-0.5'>
                   {errors.desc?.message}
@@ -197,12 +202,24 @@ const UploadJob = () => {
               <label className='text-gray-600 text-sm mb-1'>
                 Requirements
               </label>
-              <textarea
-                className='rounded border border-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-base px-4 py-2 resize-none'
-                rows={4}
-                cols={6}
-                {...register("requirements")}
-              ></textarea>
+              <Controller
+                name="requirements"
+                control={control}
+                defaultValue=""
+                rules={{ required: "Requirements are required!" }}
+                render={({ field }) => (
+                  <QuillEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Enter requirements..."
+                  />
+                )}
+              />
+              {errors.requirements && (
+                <span role='alert' className='text-xs text-red-500 mt-0.5'>
+                  {errors.requirements?.message}
+                </span>
+              )}
             </div>
 
             {errMsg && (

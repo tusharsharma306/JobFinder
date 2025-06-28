@@ -216,14 +216,14 @@ const JobDetail = () => {
               <div className='w-full flex gap-4 py-5'>
                 <div className='w-full'>
                   <p className='text-xl font-semibold'>Job Description</p>
-                  <span className='text-base'>{job?.detail[0]?.desc}</span>
+                  <div className="prose max-w-none prose-blue prose-sm md:prose-base prose-headings:font-semibold prose-p:mb-2 prose-ul:pl-6 prose-ol:pl-6 prose-li:mb-1 prose-blockquote:border-l-4 prose-blockquote:pl-4 prose-blockquote:text-gray-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-a:text-blue-600 prose-a:underline prose-img:rounded" 
+                    dangerouslySetInnerHTML={{ __html: job?.detail[0]?.desc || '' }} />
 
                   {job?.detail[0]?.requirements && (
                     <>
                       <p className='text-xl font-semibold mt-8'>Requirements</p>
-                      <span className='text-base'>
-                        {job?.detail[0]?.requirements}
-                      </span>
+                      <div className="prose max-w-none prose-blue prose-sm md:prose-base prose-headings:font-semibold prose-p:mb-2 prose-ul:pl-6 prose-ol:pl-6 prose-li:mb-1 prose-blockquote:border-l-4 prose-blockquote:pl-4 prose-blockquote:text-gray-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-a:text-blue-600 prose-a:underline prose-img:rounded"
+                        dangerouslySetInnerHTML={{ __html: job?.detail[0]?.requirements || '' }} />
                     </>
                   )}
                 </div>

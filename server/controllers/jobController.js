@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Jobs from "../models/jobsModel.js";
 import Companies from "../models/companiesModel.js";
 import Users from "../models/userModel.js";
+import { sanitizeContent } from '../utils/sanitize.js';
 
 export const createJob = async (req, res, next) => {
   try {
@@ -35,7 +36,8 @@ export const createJob = async (req, res, next) => {
     const id = req.body.user.userId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(404).send(`No Company with id: ${id}`);
+      next("Invalid User ID");
+      return;
     }
 
     const jobPost = {
@@ -45,7 +47,10 @@ export const createJob = async (req, res, next) => {
       salary,
       vacancies,
       experience,
-      detail: { desc, requirements },
+      detail: { 
+        desc: sanitizeContent(desc), 
+        requirements: sanitizeContent(requirements) 
+      },
       deadline: new Date(deadline),
       skills: skills || [],
       company: id,
@@ -53,6 +58,7 @@ export const createJob = async (req, res, next) => {
 
     const job = new Jobs(jobPost);
     await job.save();
+    // console.log('[createJob] Created job:', job._id, 'company:', job.company, 'isArchived:', job.isArchived);
 
     const company = await Companies.findById(id);
     company.jobPosts.push(job._id);
@@ -101,8 +107,10 @@ export const updateJob = async (req, res, next) => {
     }
     const id = req.body.user.userId;
 
-    if (!mongoose.Types.ObjectId.isValid(id))
-      return res.status(404).send(`No Company with id: ${id}`);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      next("Invalid User ID");
+      return;
+    }
 
     const jobPost = {
       jobTitle,
@@ -111,7 +119,7 @@ export const updateJob = async (req, res, next) => {
       salary,
       vacancies,
       experience,
-      detail: { desc, requirements },
+      detail: { desc: sanitizeContent(desc), requirements: sanitizeContent(requirements) },
       deadline,
       skills,
       _id: jobId,
@@ -121,7 +129,7 @@ export const updateJob = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Job Post Updated SUccessfully",
+      message: "Job Post Updated Successfully",
       jobPost,
     });
   } catch (error) {
@@ -142,7 +150,9 @@ export const getJobPosts = async (req, res, next) => {
       page = 1,
       limit = 20,
       isActive,
-      deadline 
+      deadline,
+      includeArchived,
+      showExpired
     } = req.query;
 
     const {user} = req.body;
@@ -186,6 +196,14 @@ if (user?.accountType === "company") {
     // Deadline filter
     if (deadline) {
       queryObject.deadline = { $gte: new Date() };
+    }
+
+    if (!includeArchived) {
+      queryObject.isArchived = false;
+    }
+
+    if (!showExpired) {
+      queryObject.deadline = { $gt: new Date() };
     }
 
     // Search functionality
@@ -301,16 +319,20 @@ export const getJobById = async (req, res, next) => {
 export const deleteJobPost = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    await Jobs.findByIdAndDelete(id);
-
-    res.status(200).send({
-      success: true,
-      message: "Job Post Delted Successfully.",
-    });
+    const companyId = req.body.user.userId;
+    const job = await Jobs.findOne({ _id: id, company: companyId });
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found or unauthorized" });
+    }
+    if (job.isArchived) {
+      return res.status(400).json({ success: false, message: "Cannot delete an archived job. Unarchive first if you want to delete." });
+    }
+    console.log('deleteJobPost called for job:', id);
+    await Jobs.deleteOne({ _id: id });
+    await Companies.findByIdAndUpdate(companyId, { $pull: { jobPosts: id } });
+    res.status(200).json({ success: true, message: "Job deleted successfully" });
   } catch (error) {
-    console.log(error);
-    res.status(404).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -492,6 +514,40 @@ export const getJobApplicants = async (req, res, next) => {
   } catch (error) {
     console.error("Error in getJobApplicants:", error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const archiveJob = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const companyId = req.body.user.userId;
+    const job = await Jobs.findOne({ _id: id, company: companyId });
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found or unauthorized" });
+    }
+    job.isArchived = true;
+    await job.save();
+    // console.log('[archiveJob] Archived job:', job._id, 'company:', job.company, 'isArchived:', job.isArchived);
+    res.status(200).json({ success: true, message: "Job archived successfully" });
+  } catch (error) {
+    console.error("[archiveJob] Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const unarchiveJob = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const companyId = req.body.user.userId;
+    const job = await Jobs.findOne({ _id: id, company: companyId });
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found or unauthorized" });
+    }
+    job.isArchived = false;
+    await job.save();
+    res.status(200).json({ success: true, message: "Job unarchived successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

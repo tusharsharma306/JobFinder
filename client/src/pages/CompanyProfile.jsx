@@ -209,6 +209,8 @@ const CompanyProfile = () => {
   const [info, setInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [openForm, setOpenForm] = useState(false);
+  const [tab, setTab] = useState("active");
+  const [jobs, setJobs] = useState([]);
 
   const fetchCompany = async() => {
     setIsLoading(true);
@@ -236,6 +238,22 @@ const CompanyProfile = () => {
     setIsLoading(false);
   };
 
+  const fetchJobs = async (archived = false) => {
+    try {
+
+      const archivedBool = Boolean(archived);
+      
+      const res = await apiRequest({
+        url: "/companies/get-company-joblisting",
+        method: "POST",
+        token: user?.token,
+        data: { archived: archivedBool }
+      });
+      console.log('[CompanyProfile] API response for jobs:', res);
+      if (res.success) setJobs(res.data);
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => {
     if(user?._id || params?.id) {
       fetchCompany();
@@ -243,6 +261,22 @@ const CompanyProfile = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [user, params?.id]);
 
+  useEffect(() => {
+    fetchJobs(tab === "archived");
+  }, [tab]);
+
+
+  const handleArchiveToggle = async (jobId, isArchived) => {
+    try {
+      const url = isArchived ? `/jobs/unarchive-job/${jobId}` : `/jobs/archive-job/${jobId}`;
+      const res = await apiRequest({ 
+        url, 
+        method: "PUT", 
+        token: user?.token 
+      });
+      if (res.success) fetchJobs(tab === "archived");
+    } catch (e) { console.error(e); }
+  };
 
   if (isLoading) {
     return <Loading />;
@@ -294,19 +328,28 @@ const CompanyProfile = () => {
         </div>
       </div>
 
+      <div className="flex gap-4 mb-6">
+        <button className={`px-4 py-2 rounded ${tab === "active" ? "bg-blue-600 text-white" : "bg-gray-200"}`} onClick={() => setTab("active")}>Active Jobs</button>
+        <button className={`px-4 py-2 rounded ${tab === "archived" ? "bg-blue-600 text-white" : "bg-gray-200"}`} onClick={() => setTab("archived")}>Archived Jobs</button>
+      </div>
+
       <div className='w-full mt-20 flex flex-col gap-2'>
         <p>Jobs Posted</p>
 
-        <div className='flex flex-wrap gap-3'>  
-          {info?.jobPosts?.map((job, index) => {
-            const data = {
-              name: info?.name,
-              email: info?.email,
-              logo: info?.profileUrl,
-              ...job,
-            };
-            return <JobCard job={data} key={index} />;
-          })}
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+          {jobs.length === 0 ? (
+            <div className="col-span-full text-center text-gray-500 py-10">No jobs found in this section.</div>
+          ) : (
+            jobs.map((job) => (
+              <JobCard
+                key={job._id}
+                job={job}
+                showArchiveToggle
+                onArchiveToggle={() => handleArchiveToggle(job._id, job.isArchived)}
+                isArchived={job.isArchived}
+              />
+            ))
+          )}
         </div>
       </div>
 

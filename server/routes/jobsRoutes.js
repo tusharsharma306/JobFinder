@@ -9,6 +9,8 @@ import {
   getJobApplicants,
   applyJob,
   updateApplicationStatus,
+  archiveJob,
+  unarchiveJob,
 } from "../controllers/jobController.js";
 
 const router = express.Router();
@@ -24,5 +26,7 @@ router.delete("/delete-job/:id", userAuth, deleteJobPost);
 router.get("/applicants/:jobId", userAuth, getJobApplicants);
 router.post("/apply-jobs/:id", userAuth, applyJob);
 router.put("/update-application-status", userAuth, updateApplicationStatus);
+router.put("/archive-job/:id", userAuth, archiveJob);
+router.put("/unarchive-job/:id", userAuth, unarchiveJob);
 
 export default router;

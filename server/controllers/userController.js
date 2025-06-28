@@ -98,34 +98,26 @@ export const getUserApplications = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Invalid user ID" });
     }
 
-    const user = await Users.findById(id).populate({
-      path: "appliedJobs",
-      populate: [
-        {
-          path: "company",
-          select: "name location profileUrl"
-        },
-        {
-          path: "applications",
-          match: { user: id },
-          select: "status appliedDate feedback"
-        }
-      ],
-      select: "jobTitle jobType location salary company applications createdAt deadline detail"
-    });
-
+    const user = await Users.findById(id).select('appliedJobs');
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
+    const jobs = await mongoose.model('Jobs').find({ _id: 
+      { $in: user.appliedJobs }, 
+      bypassArchiveFilter: true })
+      .select('jobTitle jobType location salary company applications createdAt deadline detail isArchived isActive');
 
-    const formattedApplications = user.appliedJobs.map(job => ({
-      ...job.toObject(),
-      status: job.applications[0]?.status || "pending",
-      appliedDate: job.applications[0]?.appliedDate,
-      feedback: job.applications[0]?.feedback,
-      detail: job.detail || [{ desc: "No description available" }]
-    }));
-
+    const formattedApplications = (jobs || []).filter(job => job).map(job => {
+      const jobObject = job.toObject();
+      const userApplication = jobObject.applications.find(app => app.user && app.user.toString() === id.toString());
+      return {
+        ...jobObject,
+        status: userApplication?.status || "pending",
+        appliedDate: userApplication?.appliedDate,
+        feedback: userApplication?.feedback,
+        detail: jobObject.detail && jobObject.detail.length > 0 ? jobObject.detail : [{ desc: "No description available" }]
+      };
+    });
     res.status(200).json({
       success: true,
       data: formattedApplications
@@ -134,6 +126,42 @@ export const getUserApplications = async (req, res, next) => {
     console.error("Error in get user applications:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
+};
+
+export const getAppliedJobs = async (req, res, next) => {
+    try {
+        const userId = req.body.user.userId;
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(404).json({ success: false, message: "Invalid user ID" });
+        }
+        const user = await Users.findById(userId).select('appliedJobs');
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const jobs = await mongoose.model('Jobs').find({ 
+            _id: { $in: user.appliedJobs },
+            bypassArchiveFilter: true
+        })
+        .select('jobTitle jobType location salary company applications createdAt deadline detail isArchived isActive')
+        .sort({ createdAt: -1 });
+        const formattedApplications = (jobs || []).filter(job => job).map(job => {
+            const jobObject = job.toObject();
+            const userApplication = jobObject.applications.find(app => app.user && app.user.toString() === userId.toString());
+            return {
+                ...jobObject,
+                status: userApplication?.status || "pending",
+                appliedDate: userApplication?.appliedDate,
+                feedback: userApplication?.feedback,
+                detail: jobObject.detail && jobObject.detail.length > 0 ? jobObject.detail : [{ desc: "No description available" }]
+            };
+        });
+        res.status(200).json({
+            success: true,
+            data: formattedApplications
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error fetching applied jobs" });
+    }
 };
 
 

@@ -24,7 +24,8 @@ const jobSchema = new mongoose.Schema(
     applications: [applicationSchema],
     skills: [{ type: String }],
     deadline: { type: Date, required: [true, "Application deadline is required"] },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    isArchived: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
@@ -37,6 +38,7 @@ jobSchema.index({
   salary: 1,
   experience: 1,
   deadline: 1,
+  isArchived: 1,
   Expired : 1
 });
 
@@ -52,11 +54,18 @@ jobSchema.pre('save', function(next) {
   next();
 });
 
-// middleware to check deadline
+// middleware to check deadline and archive status
 jobSchema.pre('find', function() {
-  if (!this._conditions.showExpired) {
-    this._conditions.deadline = { $gt: new Date() };
-  }
+    if (!this._conditions.showExpired) {
+        this._conditions.deadline = { $gt: new Date() };
+    }
+    if (this._conditions.bypassArchiveFilter === true) {
+        delete this._conditions.bypassArchiveFilter; 
+        return; 
+    }
+    if (typeof this._conditions.isArchived === 'undefined') {
+        this._conditions.isArchived = false;
+    }
 });
 
 jobSchema.methods.isExpired = function() {
